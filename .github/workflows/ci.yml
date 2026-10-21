@@ -1,7 +1,7 @@
 
 name: CI
 
-on:
+'on':
   pull_request:
     branches:
       - main
@@ -12,9 +12,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  checks:
-    name: TypeScript and Expo
+  quality:
+    name: Lint, TypeScript and Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -30,8 +34,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check TypeScript
-        run: ./node_modules/.bin/tsc --noEmit
+      - name: Generate Expo types
+        run: npx expo customize tsconfig.json
 
       - name: Check Expo dependencies
-        run: ./node_modules/.bin/expo install --check
+        run: npx expo install --check
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Check TypeScript
+        run: npm run check
+
+      - name: Run unit tests
+        run: npm run test:unit
