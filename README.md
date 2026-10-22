@@ -57,19 +57,40 @@ git pull origin main
 
 ## 3. Install Dependencies
 
-Run:
+Install all project dependencies:
 
 ```bash
 npm ci
 ```
 
-This installs the dependencies recorded in `package-lock.json`.
+Then configure the local environment:
 
-Use `npm ci` for a clean installation of the existing project.
+```bash
+npm run setup
+```
 
-Use `npx expo install <package>` when adding Expo-compatible libraries.
+This automatically creates `.env.local` using the values
+from `.env.example`.
 
-Do not run `npm audit fix --force` without first reviewing compatibility with Expo and React Native.
+The setup script will not overwrite an existing `.env.local`.
+
+You only need to run this setup once.
+
+## 4. Start the Application
+
+Start Expo:
+
+```bash
+npx expo start
+```
+
+If your phone cannot connect, try:
+
+```bash
+npx expo start --tunnel
+```
+
+Scan the QR code using Expo Go on your Android device.
 
 ## 4. Start the Application
 
@@ -139,6 +160,49 @@ mobile-app/
 ```
 
 Some directories are placeholders and will be populated during development.
+
+## Supabase Database
+
+The application uses Supabase for authentication and
+database access.
+
+### Environment Configuration
+
+The project uses two environment variables:
+
+- `EXPO_PUBLIC_SUPABASE_URL`
+- `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+
+These are public client-side configuration values.
+
+Run:
+
+```bash
+npm run setup
+```
+
+This copies `.env.example` to `.env.local`.
+
+The `.env.local` file is ignored by Git and must not
+be committed.
+
+### Security
+
+- Never add a Supabase secret key to the mobile app.
+- Never commit passwords, private tokens or credentials.
+- All database access must be protected using Row Level
+  Security (RLS).
+- Users should only access groups and expenses they are
+  authorized to view or modify.
+
+### Supabase Client
+
+The shared Supabase client is located at:
+
+`src/services/api/supabase.ts`
+
+Import this client instead of creating new Supabase
+connections in individual components.
 
 ### Where Should New Code Go?
 
@@ -361,6 +425,24 @@ npx expo install --check
 ```
 
 Avoid forcing incompatible React or React Native upgrades.
+
+### Missing Supabase Environment Variables
+
+If you get an error about missing Supabase variables,
+run:
+
+```bash
+npm run setup
+```
+
+Then restart Expo:
+
+```bash
+npx expo start --clear
+```
+
+If `.env.local` already exists but contains incorrect
+values, update it manually or remove it and run setup again.
 
 ## 13. Documentation and Deliverables
 
