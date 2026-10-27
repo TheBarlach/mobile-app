@@ -152,6 +152,7 @@ mobile-app/
 │   │   └── sync/            Offline synchronization
 │   ├── types/               Shared TypeScript definitions
 │   └── utils/               Helper functions
+├── supabase
 ├── .github/workflows/       CI pipeline
 ├── AGENTS.md                Project development rules
 ├── CLAUDE.md                Claude project instructions
