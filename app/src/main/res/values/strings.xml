@@ -2,6 +2,7 @@
     <string name="app_name">Expense Share</string>
     <string name="nav_home">Home</string>
     <string name="nav_explore">Explore</string>
+    <string name="nav_balances">Balances</string>
     <string name="home_title">Shared expenses, made simple</string>
     <string name="home_body">Create a group, add expenses and see who owes whom. Features are added as the project develops.</string>
     <string name="home_split_example">Example: 100.00 DKK split between 3 people</string>
@@ -57,4 +58,32 @@
     <string name="error_profile_load_failed">Could not load your profile.</string>
     <string name="error_profile_not_found">Your profile was not found.</string>
     <string name="error_unknown">Something went wrong. Try again.</string>
+
+    <!-- Balances -->
+    <string name="balances_title">Balances</string>
+    <string name="balances_your_balance">Your balance</string>
+    <string name="balances_owes_you">%1$s owes you</string>
+    <string name="balances_you_owe">You owe %1$s</string>
+    <string name="balances_unknown_member">Unknown member</string>
+    <string name="balances_settled_up">All settled up</string>
+    <string name="balances_empty">You are not in any groups yet.</string>
+    <string name="balances_loading">Loading balances…</string>
+    <string name="balances_load_failed">Could not load your balances. Check your connection and try again.</string>
+    <string name="balances_showing_saved">You are offline. Showing saved balances.</string>
+    <string name="balances_showing_saved_since">You are offline. Showing balances saved %1$s.</string>
+    <string name="balances_remind">Remind</string>
+    <string name="balances_remind_pending">Sending…</string>
+    <string name="balances_remind_sent">Reminded</string>
+    <string name="balances_retry">Retry</string>
+    <string name="balances_remind_failed_message">Could not send the reminder to %1$s.</string>
+    <string name="balances_waiting_for_connection">Waiting for connection…</string>
+    <string name="balances_settle_up">Settle up</string>
+    <string name="balances_settle_up_question">Record that you paid %1$s %2$s?</string>
+    <string name="balances_settle_up_confirm">Record payment</string>
+    <string name="balances_payment_pending">Saving payment…</string>
+    <string name="balances_payment_failed">The payment could not be saved.</string>
+    <string name="balances_payment_synced">Your payment to %1$s has been saved.</string>
+    <string name="balances_reminder_synced">Your reminder to %1$s has been sent.</string>
+    <string name="balances_profile_picture">Your profile</string>
+    <string name="action_cancel">Cancel</string>
 </resources>

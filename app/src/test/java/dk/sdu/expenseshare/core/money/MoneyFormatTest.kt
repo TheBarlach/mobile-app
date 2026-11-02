@@ -19,4 +19,18 @@ class MoneyFormatTest {
     fun `formats negative amounts`() {
         assertEquals("-12.50 DKK", formatDkk(-1250))
     }
+
+    @Test
+    fun `short format leaves out zero ore`() {
+        assertEquals("150 DKK", formatDkkShort(15000))
+        assertEquals("150.50 DKK", formatDkkShort(15050))
+        assertEquals("-100 DKK", formatDkkShort(-10000))
+    }
+
+    @Test
+    fun `signed format shows the direction of a balance`() {
+        assertEquals("+ 150 DKK", formatSignedDkk(15000))
+        assertEquals("- 33.34 DKK", formatSignedDkk(-3334))
+        assertEquals("0 DKK", formatSignedDkk(0))
+    }
 }

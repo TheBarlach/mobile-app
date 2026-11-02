@@ -15,7 +15,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ExpenseShareTheme {
-                ExpenseShareApp(authRepository = authRepository)
+                ExpenseShareApp(
+                    authRepository = authRepository,
+                    balancesRepositories = (application as ExpenseShareApplication).balancesRepositories
+                )
             }
         }
     }

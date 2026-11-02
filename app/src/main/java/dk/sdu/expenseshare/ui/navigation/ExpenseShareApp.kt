@@ -14,7 +14,9 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -32,6 +34,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dk.sdu.expenseshare.R
+import dk.sdu.expenseshare.data.balances.BalancesRepositories
+import dk.sdu.expenseshare.data.balances.BalancesRepository
 import dk.sdu.expenseshare.data.remote.AuthRepository
 import dk.sdu.expenseshare.data.remote.SessionState
 import dk.sdu.expenseshare.feature.auth.LoginScreen
@@ -40,6 +44,9 @@ import dk.sdu.expenseshare.feature.auth.RegisterScreen
 import dk.sdu.expenseshare.feature.auth.RegisterViewModel
 import dk.sdu.expenseshare.feature.auth.SessionUiState
 import dk.sdu.expenseshare.feature.auth.SessionViewModel
+import dk.sdu.expenseshare.feature.balances.BalancesScreen
+import dk.sdu.expenseshare.feature.balances.BalancesViewModel
+import dk.sdu.expenseshare.feature.balances.initialsOf
 import dk.sdu.expenseshare.feature.explore.ExploreScreen
 import dk.sdu.expenseshare.feature.home.HomeScreen
 import kotlin.reflect.KClass
@@ -56,6 +63,9 @@ object RegisterRoute
 object HomeRoute
 
 @Serializable
+object BalancesRoute
+
+@Serializable
 object ExploreRoute
 
 private enum class TopLevelDestination(
@@ -65,6 +75,7 @@ private enum class TopLevelDestination(
     @DrawableRes val icon: Int
 ) {
     Home(HomeRoute, HomeRoute::class, R.string.nav_home, R.drawable.ic_home),
+    Balances(BalancesRoute, BalancesRoute::class, R.string.nav_balances, R.drawable.ic_balances),
     Explore(ExploreRoute, ExploreRoute::class, R.string.nav_explore, R.drawable.ic_explore)
 }
 
@@ -73,10 +84,15 @@ private enum class TopLevelDestination(
  * (bottom navigation) while signed in, so signed-out users can never reach the app screens.
  */
 @Composable
-fun ExpenseShareApp(authRepository: AuthRepository) {
+fun ExpenseShareApp(authRepository: AuthRepository, balancesRepositories: BalancesRepositories) {
     val sessionViewModel: SessionViewModel =
         viewModel(factory = viewModelFactory { initializer { SessionViewModel(authRepository) } })
     val sessionState by sessionViewModel.state.collectAsStateWithLifecycle()
+
+    // Stop the previous user's background sync after sign-out; unsent writes stay saved.
+    LaunchedEffect(sessionState.session) {
+        if (sessionState.session == SessionState.SignedOut) balancesRepositories.release()
+    }
 
     when (val session = sessionState.session) {
         SessionState.Loading -> SessionStatusScreen(stringResource(R.string.session_loading))
@@ -84,6 +100,8 @@ fun ExpenseShareApp(authRepository: AuthRepository) {
         SessionState.SignedOut -> AuthNavHost(authRepository)
         is SessionState.SignedIn ->
             MainNavHost(
+                userId = session.userId,
+                balancesRepository = remember(session.userId) { balancesRepositories.forUser(session.userId) },
                 email = session.email,
                 sessionState = sessionState,
                 onRetryProfile = sessionViewModel::reloadProfile,
@@ -140,6 +158,8 @@ private fun AuthNavHost(authRepository: AuthRepository) {
 
 @Composable
 private fun MainNavHost(
+    userId: String,
+    balancesRepository: BalancesRepository,
     email: String?,
     sessionState: SessionUiState,
     onRetryProfile: () -> Unit,
@@ -183,6 +203,22 @@ private fun MainNavHost(
                     profileError = sessionState.profileError,
                     onRetryProfile = onRetryProfile,
                     onSignOut = onSignOut
+                )
+            }
+            composable<BalancesRoute> {
+                val userName = sessionState.profile?.fullName ?: sessionState.profile?.username
+                BalancesScreen(
+                    viewModel =
+                    viewModel(
+                        // Keyed by user so a different account never sees the previous user's balances.
+                        key = "balances-$userId",
+                        factory = viewModelFactory {
+                            initializer {
+                                BalancesViewModel(balancesRepository, userId)
+                            }
+                        }
+                    ),
+                    userInitials = initialsOf(userName)
                 )
             }
             composable<ExploreRoute> { ExploreScreen() }
