@@ -1,0 +1,5 @@
+# Copy these lines into local.properties (git-ignored; Android Studio creates it
+# with sdk.dir on first sync). These are public client-side values.
+# Never put a Supabase secret key here.
+supabase.url=https://jbnkvycqrjiqbjmstner.supabase.co
+supabase.publishableKey=sb_publishable_vqKlUV0eNuFml-D4j9v4Dg_nkH8-t4q
