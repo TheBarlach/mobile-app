@@ -12,6 +12,7 @@ import dk.sdu.expenseshare.data.remote.AuthRepository
 import dk.sdu.expenseshare.data.remote.SessionState
 import dk.sdu.expenseshare.data.remote.SignUpResponse
 import dk.sdu.expenseshare.domain.Profile
+import dk.sdu.expenseshare.domain.ProfileUpdate
 import dk.sdu.expenseshare.ui.navigation.ExpenseShareApp
 import dk.sdu.expenseshare.ui.theme.ExpenseShareTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +39,14 @@ private class FakeAuthApi(initial: SessionState) : AuthApi {
 
     override suspend fun fetchProfile(userId: String) =
         Profile(id = userId, username = "anna_h", fullName = "Anna Hansen")
+
+    override suspend fun updateProfile(userId: String, update: ProfileUpdate) = Profile(
+        id = userId,
+        username = "anna_h",
+        fullName = update.fullName,
+        phone = update.phone,
+        notificationsEnabled = update.notificationsEnabled
+    )
 }
 
 @RunWith(AndroidJUnit4::class)

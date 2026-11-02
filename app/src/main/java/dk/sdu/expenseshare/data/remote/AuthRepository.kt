@@ -1,6 +1,7 @@
 package dk.sdu.expenseshare.data.remote
 
 import dk.sdu.expenseshare.domain.Profile
+import dk.sdu.expenseshare.domain.ProfileUpdate
 import dk.sdu.expenseshare.domain.SignInInput
 import dk.sdu.expenseshare.domain.SignUpInput
 import dk.sdu.expenseshare.feature.auth.normalizeEmail
@@ -58,4 +59,7 @@ class AuthRepository(private val api: AuthApi) {
 
     suspend fun fetchProfile(userId: String): Profile =
         api.fetchProfile(userId) ?: throw AuthException(AuthErrorReason.ProfileNotFound)
+
+    suspend fun updateProfile(userId: String, update: ProfileUpdate): Profile =
+        api.updateProfile(userId, update) ?: throw AuthException(AuthErrorReason.ProfileNotFound)
 }

@@ -10,8 +10,18 @@ data class Profile(
     val username: String? = null,
     @SerialName("full_name") val fullName: String? = null,
     @SerialName("avatar_url") val avatarUrl: String? = null,
+    val phone: String? = null,
+    @SerialName("notifications_enabled") val notificationsEnabled: Boolean = true,
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null
+)
+
+/** Columns the user may change on the Profile screen. */
+@Serializable
+data class ProfileUpdate(
+    @SerialName("full_name") val fullName: String,
+    val phone: String?,
+    @SerialName("notifications_enabled") val notificationsEnabled: Boolean
 )
 
 data class SignUpInput(val fullName: String, val username: String, val email: String, val password: String)

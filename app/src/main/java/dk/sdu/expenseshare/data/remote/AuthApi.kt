@@ -1,6 +1,7 @@
 package dk.sdu.expenseshare.data.remote
 
 import dk.sdu.expenseshare.domain.Profile
+import dk.sdu.expenseshare.domain.ProfileUpdate
 import kotlinx.coroutines.flow.Flow
 
 /** Who is signed in, as seen by the backend client. */
@@ -29,6 +30,7 @@ enum class AuthErrorReason {
     NotConfigured,
     ProfileLoadFailed,
     ProfileNotFound,
+    ProfileSaveFailed,
     Unknown
 }
 
@@ -73,4 +75,7 @@ interface AuthApi {
     suspend fun signOut()
 
     suspend fun fetchProfile(userId: String): Profile?
+
+    /** Returns the updated row, or null when no row was updated. */
+    suspend fun updateProfile(userId: String, update: ProfileUpdate): Profile?
 }

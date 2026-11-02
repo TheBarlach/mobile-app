@@ -55,6 +55,12 @@ class SessionViewModel(private val repository: AuthRepository) : ViewModel() {
         loadProfile(userId)
     }
 
+    /** Shows a profile saved elsewhere (e.g. the Profile screen) without reloading it. */
+    fun onProfileUpdated(profile: Profile) {
+        val userId = (_state.value.session as? SessionState.SignedIn)?.userId
+        if (profile.id == userId) _state.update { it.copy(profile = profile, profileError = null) }
+    }
+
     fun signOut() {
         viewModelScope.launch {
             // A failed sign-out (e.g. offline) must not crash the app; the user stays signed in
