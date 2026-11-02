@@ -8,40 +8,28 @@ The concept is similar to WeShare and MobilePay Groups.
 
 ## Technology Stack
 
-- React Native
-- Expo SDK 57
-- TypeScript
-- Expo Router
-- Jest and React Native Testing Library
-- ESLint
+- Kotlin
+- Jetpack Compose (Material 3)
+- Navigation Compose
+- Supabase (supabase-kt)
+- Gradle with Kotlin DSL and a version catalog
+- JUnit and Compose UI Test
+- ktlint and Android Lint
 - GitHub Actions
-- npm
 
 **Repository:** https://github.com/TheBarlach/mobile-app
 
 ## 1. Requirements
 
-Before getting started, install:
+Install:
 
-- [Node.js](https://nodejs.org/) — Node.js 22 recommended
-- npm (included with Node.js)
+- [Android Studio](https://developer.android.com/studio) (latest stable). It includes the Android SDK and a bundled JDK.
 - [Git](https://git-scm.com/)
-- [Visual Studio Code](https://code.visualstudio.com/)
-- [Expo Go](https://expo.dev/go) on an Android device, or an Android emulator through Android Studio
+- An Android device with USB/wireless debugging, or an emulator created in Android Studio's Device Manager
 
-Verify your installation:
-
-```bash
-node --version
-npm --version
-git --version
-```
-
-The project uses npm and includes a `package-lock.json`. Do not switch package managers without team agreement.
+The project builds with JDK 17 or newer. Gradle is downloaded automatically by the wrapper (`./gradlew`); you do not need to install it.
 
 ## 2. Clone the Repository
-
-Open a terminal and run:
 
 ```bash
 git clone https://github.com/TheBarlach/mobile-app.git
@@ -55,168 +43,105 @@ git switch main
 git pull origin main
 ```
 
-## 3. Install Dependencies
+## 3. Open and Configure the Project
 
-Install all project dependencies:
+1. Open the repository root folder in Android Studio and let Gradle sync.
+   Android Studio creates `local.properties` with your SDK path.
+2. Copy the Supabase lines from `local.properties.example` into `local.properties`.
 
-```bash
-npm ci
-```
+`local.properties` is ignored by Git and must not be committed.
 
-Then configure the local environment:
-
-```bash
-npm run setup
-```
-
-This automatically creates `.env.local` using the values
-from `.env.example`.
-
-The setup script will not overwrite an existing `.env.local`.
-
-You only need to run this setup once.
-
-## 4. Start the Application
-
-Start Expo:
+Command-line alternative (if the SDK is installed and `ANDROID_HOME` is set):
 
 ```bash
-npx expo start
+echo "sdk.dir=$ANDROID_HOME" > local.properties
+grep '^supabase' local.properties.example >> local.properties
 ```
 
-If your phone cannot connect, try:
+## 4. Run the Application
+
+In Android Studio, select the `app` run configuration and a device, then press **Run**.
+
+From the command line, with a device or emulator connected:
 
 ```bash
-npx expo start --tunnel
+./gradlew installDebug
 ```
 
-Scan the QR code using Expo Go on your Android device.
-
-## 4. Start the Application
-
-Start the Expo development server:
-
-```bash
-npx expo start
-```
-
-A QR code should appear in the terminal.
-
-### Android Phone
-
-1. Install Expo Go.
-2. Ensure your computer and phone can communicate over the local network.
-3. Scan the QR code using Expo Go or your phone's camera.
-4. The application should open on your device.
-
-### Connection Problems or Remote Development
-
-Try:
-
-```bash
-npx expo start --tunnel
-```
-
-This is useful when developing through SSH, on different networks, or when a local connection is unavailable.
-
-### Android Emulator
-
-With an Android emulator installed and configured:
-
-```bash
-npm run android
-```
-
-Expo Go is suitable for the initial project. Some future native dependencies may require a development build instead.
+The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
 
 ## 5. Project Structure
 
 ```text
 mobile-app/
-├── assets/                  Images, icons and other assets
-├── docs/                    Project and AI documentation
-├── src/
-│   ├── app/                 Expo Router screens and layouts
-│   ├── components/          Shared UI components
-│   ├── constants/           Shared constants
-│   ├── features/
-│   │   ├── auth/            Profiles and authentication
-│   │   ├── groups/          Group management
-│   │   ├── expenses/        Expense management
-│   │   ├── balances/        Debt calculations
-│   │   └── notifications/   Notifications and reminders
-│   ├── hooks/               Shared React hooks
-│   ├── services/
-│   │   ├── api/             Backend communication
-│   │   ├── storage/         Local persistence
-│   │   └── sync/            Offline synchronization
-│   ├── types/               Shared TypeScript definitions
-│   └── utils/               Helper functions
-├── supabase
-├── .github/workflows/       CI pipeline
-├── AGENTS.md                Project development rules
-├── CLAUDE.md                Claude project instructions
-├── package.json
-└── tsconfig.json
+├── app/
+│   ├── build.gradle.kts             App module build configuration
+│   └── src/
+│       ├── main/
+│       │   ├── AndroidManifest.xml
+│       │   ├── java/dk/sdu/expenseshare/
+│       │   │   ├── MainActivity.kt  Single activity hosting Compose
+│       │   │   ├── ui/
+│       │   │   │   ├── navigation/  Routes and NavHost
+│       │   │   │   └── theme/       Material 3 theme
+│       │   │   ├── feature/         Feature screens (home, explore, ...)
+│       │   │   ├── data/remote/     Supabase client
+│       │   │   └── core/money/      Money splitting and formatting
+│       │   └── res/                 Strings, icons and other resources
+│       ├── test/                    JVM unit tests
+│       └── androidTest/             Compose UI / instrumented tests
+├── gradle/libs.versions.toml        Dependency versions
+├── supabase/                        Supabase CLI config and migrations
+├── docs/                            Project and AI documentation
+├── .github/workflows/               CI pipeline
+├── AGENTS.md                        Project development rules
+└── CLAUDE.md                        Claude project instructions
 ```
 
-Some directories are placeholders and will be populated during development.
+See [AGENTS.md](AGENTS.md) for the full target architecture (`feature/auth`, `feature/groups`, `data/local`, `data/sync`, ...). Packages are added as features are implemented.
+
+### Where Should New Code Go?
+
+- New screens: `feature/<feature>/`
+- Navigation routes: `ui/navigation/`
+- Reusable composables: `ui/components/`
+- Screen state and logic: a `ViewModel` in `feature/<feature>/`
+- Backend communication: `data/remote/`
+- Offline storage: `data/local/`
+- Background retry and synchronization: `data/sync/`
+- Shared models: `domain/`
+- Pure calculations: `core/`
+
+Do not put application logic directly inside composables.
 
 ## Supabase Database
 
-The application uses Supabase for authentication and
-database access.
+The application uses Supabase for authentication and database access.
 
-### Environment Configuration
+### Configuration
 
-The project uses two environment variables:
+The app reads two values at build time (exposed as `BuildConfig` fields):
 
-- `EXPO_PUBLIC_SUPABASE_URL`
-- `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+| `local.properties` key    | Environment variable fallback |
+| ------------------------- | ----------------------------- |
+| `supabase.url`            | `SUPABASE_URL`                |
+| `supabase.publishableKey` | `SUPABASE_PUBLISHABLE_KEY`    |
 
-These are public client-side configuration values.
-
-Run:
-
-```bash
-npm run setup
-```
-
-This copies `.env.example` to `.env.local`.
-
-The `.env.local` file is ignored by Git and must not
-be committed.
+These are public client-side values. See step 3 above.
 
 ### Security
 
 - Never add a Supabase secret key to the mobile app.
 - Never commit passwords, private tokens or credentials.
-- All database access must be protected using Row Level
-  Security (RLS).
-- Users should only access groups and expenses they are
-  authorized to view or modify.
+- All database access must be protected using Row Level Security (RLS).
+- Users should only access groups and expenses they are authorized to view or modify.
 
 ### Supabase Client
 
-The shared Supabase client is located at:
+The shared client is `SupabaseProvider.client` in
+`app/src/main/java/dk/sdu/expenseshare/data/remote/SupabaseProvider.kt`.
 
-`src/services/api/supabase.ts`
-
-Import this client instead of creating new Supabase
-connections in individual components.
-
-### Where Should New Code Go?
-
-- New pages and navigation: `src/app/`
-- Feature-specific business logic: `src/features/<feature>/`
-- Reusable UI: `src/components/`
-- Backend communication: `src/services/api/`
-- Offline storage: `src/services/storage/`
-- Background retry and synchronization: `src/services/sync/`
-- Shared models: `src/types/`
-- General calculations: `src/utils/`
-
-Do not put all application logic directly inside the screens.
+Use it instead of creating new Supabase clients. It is created lazily and fails with a clear message if the configuration is missing.
 
 ## 6. Main Project Features
 
@@ -287,26 +212,11 @@ git pull origin main
 git switch -c feature/your-feature-name
 ```
 
-Examples:
-
-```text
-feature/login-screen
-feature/group-management
-feature/add-expense
-feature/balance-overview
-feature/offline-storage
-```
-
-### Commit Your Changes
+### Commit and Push
 
 ```bash
 git add .
 git commit -m "feat: add group creation screen"
-```
-
-### Push Your Branch
-
-```bash
 git push -u origin feature/your-feature-name
 ```
 
@@ -326,45 +236,33 @@ AI-generated code must be reviewed by a teammate who did not generate it.
 Before opening a pull request, run:
 
 ```bash
-npm run precommit
+./gradlew ktlintCheck testDebugUnitTest lintDebug assembleDebug
 ```
 
-This runs:
+| Command                               | Purpose                                         |
+| ------------------------------------- | ----------------------------------------------- |
+| `./gradlew ktlintCheck`               | Checks Kotlin code style                        |
+| `./gradlew ktlintFormat`              | Fixes Kotlin code style automatically           |
+| `./gradlew testDebugUnitTest`         | Runs JVM unit tests                             |
+| `./gradlew lintDebug`                 | Runs Android Lint                               |
+| `./gradlew assembleDebug`             | Builds the debug APK                            |
+| `./gradlew connectedDebugAndroidTest` | Runs Compose UI tests on a device/emulator      |
 
-```bash
-npm run lint
-npm run check
-npm run test:unit
-```
+Reports are written to `app/build/reports/`.
 
-| Command                    | Purpose                              |
-| -------------------------- | ------------------------------------ |
-| `npm run lint`             | Checks ESLint rules                  |
-| `npm run check`            | Checks TypeScript                    |
-| `npm run test:unit`        | Runs Jest unit tests                 |
-| `npm run precommit`        | Runs all three checks                |
-| `npx expo install --check` | Checks Expo dependency compatibility |
-
-Existing tests include expense splitting and rounding.
-
-New business logic should include relevant tests.
+Existing tests cover expense splitting, rounding and money formatting, plus a Compose UI test for the home and explore screens.
 
 ## 10. Continuous Integration
 
-GitHub Actions automatically runs when:
+GitHub Actions runs on pull requests targeting `main` and on pushes to `main`. It checks:
 
-- A pull request targeting `main` is opened or updated.
-- Changes are pushed to `main`.
+- Gradle wrapper integrity
+- ktlint
+- JVM unit tests
+- Android Lint
+- Debug APK and instrumented test APK build
 
-The CI pipeline checks:
-
-- Dependency installation
-- Expo dependency compatibility
-- ESLint
-- TypeScript
-- Jest unit tests
-
-All required checks must pass before merging. Android build verification is planned separately.
+All checks must pass before merging. Instrumented tests are compiled in CI but must be run locally on a device or emulator.
 
 ## 11. AI Usage
 
@@ -385,65 +283,21 @@ AI-generated code must pass tests, CI, and independent review before merging.
 
 ## 12. Troubleshooting
 
-### Expo Command Not Found
+### SDK Location Not Found
 
-Install the project's dependencies:
+Gradle cannot find the Android SDK. Open the project in Android Studio once, or create `local.properties` with `sdk.dir=/path/to/Android/Sdk`.
 
-```bash
-npm ci
-```
+### Missing Supabase Configuration
 
-Then run:
+If the app reports missing Supabase configuration, add `supabase.url` and `supabase.publishableKey` to `local.properties` (see `local.properties.example`) and rebuild.
 
-```bash
-npx expo start
-```
+### ktlint Failures
 
-### App Cannot Connect to Expo
+Run `./gradlew ktlintFormat`, review the changes, and commit them.
 
-Try:
+### Gradle Sync Problems
 
-```bash
-npx expo start --tunnel
-```
-
-### TypeScript CSS Import Errors
-
-Check whether the project contains the CSS type declarations in `src/types/`, then run:
-
-```bash
-npm run check
-```
-
-Do not remove CSS imports just to make TypeScript pass.
-
-### Dependency Problems
-
-Check compatibility:
-
-```bash
-npx expo install --check
-```
-
-Avoid forcing incompatible React or React Native upgrades.
-
-### Missing Supabase Environment Variables
-
-If you get an error about missing Supabase variables,
-run:
-
-```bash
-npm run setup
-```
-
-Then restart Expo:
-
-```bash
-npx expo start --clear
-```
-
-If `.env.local` already exists but contains incorrect
-values, update it manually or remove it and run setup again.
+Use **File → Invalidate Caches** in Android Studio, or run `./gradlew --stop` and try again. Make sure Android Studio uses JDK 17 or newer (**Settings → Build Tools → Gradle → Gradle JDK**).
 
 ## 13. Documentation and Deliverables
 
@@ -463,9 +317,9 @@ The project documentation should be updated as the implementation develops.
 A feature is ready when:
 
 - It satisfies its relevant requirement.
-- Code passes lint and TypeScript checks.
+- The project builds and ktlint and Android Lint pass.
 - Appropriate automated tests pass.
-- Android behavior has been checked where relevant.
+- Android behavior has been checked on a device or emulator.
 - Reliability implications have been considered.
 - Documentation and AI logs are updated where needed.
 - The pull request has been reviewed.

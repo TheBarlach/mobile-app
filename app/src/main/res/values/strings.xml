@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Expense Share</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_explore">Explore</string>
+    <string name="home_title">Shared expenses, made simple</string>
+    <string name="home_body">Create a group, add expenses and see who owes whom. Features are added as the project develops.</string>
+    <string name="home_split_example">Example: 100.00 DKK split between 3 people</string>
+    <string name="explore_title">Explore</string>
+    <string name="explore_body">This screen is a placeholder for upcoming features such as groups, balances and notifications.</string>
+</resources>
