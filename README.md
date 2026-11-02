@@ -83,9 +83,11 @@ mobile-app/
 │       │   │   ├── MainActivity.kt  Single activity hosting Compose
 │       │   │   ├── ui/
 │       │   │   │   ├── navigation/  Routes and NavHost
-│       │   │   │   └── theme/       Material 3 theme
-│       │   │   ├── feature/         Feature screens (home, explore, ...)
-│       │   │   ├── data/remote/     Supabase client
+│       │   │   │   ├── theme/       Material 3 theme
+│       │   │   │   └── components/  Shared composables (text field, button)
+│       │   │   ├── feature/         Feature screens and ViewModels (auth, home, explore)
+│       │   │   ├── data/remote/     Supabase client, auth API and repository
+│       │   │   ├── domain/          Shared models (Profile)
 │       │   │   └── core/money/      Money splitting and formatting
 │       │   └── res/                 Strings, icons and other resources
 │       ├── test/                    JVM unit tests
@@ -142,6 +144,12 @@ The shared client is `SupabaseProvider.client` in
 `app/src/main/java/dk/sdu/expenseshare/data/remote/SupabaseProvider.kt`.
 
 Use it instead of creating new Supabase clients. It is created lazily and fails with a clear message if the configuration is missing.
+
+### Authentication
+
+Login, registration and the profile shown on the home screen use Supabase Auth through `AuthRepository` (`data/remote/`). Screens never call the Supabase client directly: `SupabaseAuthApi` wraps supabase-kt behind the `AuthApi` interface, so the business rules can be unit tested with a fake.
+
+The profile row is created by the `handle_new_user` database trigger. Apply `supabase/migrations/20261102120000_fix_profiles_signup.sql` (for example with `supabase db push`) before testing registration; it stores the username, adds the `is_username_available` function and tightens the table grants.
 
 ## 6. Main Project Features
 

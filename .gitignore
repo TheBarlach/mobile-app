@@ -35,3 +35,8 @@ local.properties
 # Dependencies
 node_modules/
 **/node_modules/
+
+# Local tool state
+.expo/
+.claude/worktrees/
+.claude/settings.local.json
