@@ -85,7 +85,7 @@ mobile-app/
 │       │   │   │   ├── navigation/  Routes and NavHost
 │       │   │   │   ├── theme/       Material 3 theme
 │       │   │   │   └── components/  Shared composables (text field, button)
-│       │   │   ├── feature/         Feature screens and ViewModels (auth, home, explore)
+│       │   │   ├── feature/         Feature screens and ViewModels (auth, home, balances, notifications)
 │       │   │   ├── data/remote/     Supabase client, auth API and repository
 │       │   │   ├── domain/          Shared models (Profile)
 │       │   │   └── core/money/      Money splitting and formatting
@@ -150,6 +150,38 @@ Use it instead of creating new Supabase clients. It is created lazily and fails 
 Login, registration and the profile shown on the home screen use Supabase Auth through `AuthRepository` (`data/remote/`). Screens never call the Supabase client directly: `SupabaseAuthApi` wraps supabase-kt behind the `AuthApi` interface, so the business rules can be unit tested with a fake.
 
 The profile row is created by the `handle_new_user` database trigger. Apply `supabase/migrations/20261102120000_fix_profiles_signup.sql` (for example with `supabase db push`) before testing registration; it stores the username, adds the `is_username_available` function and tightens the table grants.
+
+### Groups, Expenses and Balances
+
+`supabase/migrations/20261103120000_groups_expenses.sql` adds `groups`, `group_members`, `expenses`, `expense_shares`, `payments` and `reminders`. Apply it with `supabase db push` before using the Balances tab.
+
+- Only facts are stored: who paid what and how it was split. Balances are calculated in the app by the pure functions in `domain/balances/Balances.kt`.
+- Members can only read their own groups (RLS). App users cannot write to the tables directly; they call the functions `create_group`, `add_group_member`, `create_expense`, `record_payment` and `send_reminder`, which validate the input.
+- Every write has an id generated on the phone. The functions ignore an id that already exists, so a retry can never create a duplicate.
+- `supabase/sql-tests/groups_expenses_test.sql` checks the rules (access, validation, idempotent retries) against a local database. Never run it against production.
+
+In the app, `BalancesRepository` (`data/balances/`) combines three parts:
+
+| Part | Where | What it does |
+| ---- | ----- | ------------ |
+| `SupabaseBalancesApi` | `data/remote/` | Fetches groups and calls the write functions |
+| `BalancesCache` | `data/local/` | Saves the last fetched groups as JSON, so balances are shown offline |
+| `Outbox` | `data/sync/` | Saves unsent writes and sends them in the background with bounded exponential backoff; retries when connectivity returns |
+
+Data is stored per user in the app's private files folder (`files/balances/<user id>/`).
+
+### Notifications
+
+`supabase/migrations/20261103140000_notifications.sql` adds the `notifications` table. Apply it with `supabase db push` before using the Alerts tab.
+
+- Notifications are created by database triggers, never by the app: a new expense notifies the other members, a reminder notifies the member who owes, a payment notifies the member who was paid, and a new member notifies the others (and is told who added them).
+- Because the triggers only fire for rows that are really inserted, a retried write cannot notify twice.
+- Names, group name and amount are copied into each notification, so the text stays readable if someone leaves the group.
+- Users can only read their own notifications (RLS). They are marked as read through `mark_notifications_read`, which ignores other users' ids and can be retried safely.
+- `send_reminder` now takes an optional `p_amount`, the amount shown on the balances screen, so a reminder can say "You owe John 100 DKK". Balances are simplified across the whole group in the app, so the database cannot calculate this amount itself.
+- `supabase/sql-tests/notifications_test.sql` checks the triggers, access rules and retries against a local database. Never run it against production.
+
+In the app, `NotificationsRepository` (`data/notifications/`) keeps the last fetched notifications in `files/notifications/<user id>/` so they are shown offline. Marking as read is shown at once; the ids are saved and sent in the background with the same bounded backoff as the outbox, again when connectivity returns, and after a restart. The Alerts tab shows the unread count as a badge on every tab and fetches new notifications when the tab is opened and when connectivity returns. Notifications are not pushed in real time (no Supabase Realtime or FCM yet).
 
 ## 6. Main Project Features
 
@@ -258,7 +290,7 @@ Before opening a pull request, run:
 
 Reports are written to `app/build/reports/`.
 
-Existing tests cover expense splitting, rounding and money formatting, plus a Compose UI test for the home and explore screens.
+Existing tests cover expense splitting, rounding and money formatting, plus Compose UI tests for the home, balances and notifications screens.
 
 ## 10. Continuous Integration
 
