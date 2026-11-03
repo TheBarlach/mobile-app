@@ -11,6 +11,7 @@ fun FieldError.message(): String = when (this) {
     FieldError.MissingPassword -> stringResource(R.string.error_missing_password)
     FieldError.MissingName -> stringResource(R.string.error_missing_name)
     FieldError.InvalidUsername -> stringResource(R.string.error_invalid_username)
+    FieldError.InvalidPhone -> stringResource(R.string.error_invalid_phone)
     FieldError.PasswordTooShort -> stringResource(R.string.error_password_too_short, MIN_PASSWORD_LENGTH)
 }
 
@@ -28,6 +29,7 @@ fun AuthErrorReason.message(): String = stringResource(
         AuthErrorReason.NotConfigured -> R.string.error_not_configured
         AuthErrorReason.ProfileLoadFailed -> R.string.error_profile_load_failed
         AuthErrorReason.ProfileNotFound -> R.string.error_profile_not_found
+        AuthErrorReason.ProfileSaveFailed -> R.string.error_profile_save_failed
         AuthErrorReason.Unknown -> R.string.error_unknown
     }
 )

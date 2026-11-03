@@ -32,16 +32,22 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dk.sdu.expenseshare.R
+import dk.sdu.expenseshare.data.remote.AuthErrorReason
 import dk.sdu.expenseshare.data.remote.AuthRepository
 import dk.sdu.expenseshare.data.remote.SessionState
+import dk.sdu.expenseshare.domain.Profile
 import dk.sdu.expenseshare.feature.auth.LoginScreen
 import dk.sdu.expenseshare.feature.auth.LoginViewModel
 import dk.sdu.expenseshare.feature.auth.RegisterScreen
 import dk.sdu.expenseshare.feature.auth.RegisterViewModel
 import dk.sdu.expenseshare.feature.auth.SessionUiState
 import dk.sdu.expenseshare.feature.auth.SessionViewModel
+import dk.sdu.expenseshare.feature.auth.message
 import dk.sdu.expenseshare.feature.explore.ExploreScreen
 import dk.sdu.expenseshare.feature.home.HomeScreen
+import dk.sdu.expenseshare.feature.profile.ProfileScreen
+import dk.sdu.expenseshare.feature.profile.ProfileViewModel
+import dk.sdu.expenseshare.ui.components.PrimaryButton
 import kotlin.reflect.KClass
 import kotlinx.serialization.Serializable
 
@@ -58,6 +64,9 @@ object HomeRoute
 @Serializable
 object ExploreRoute
 
+@Serializable
+object ProfileRoute
+
 private enum class TopLevelDestination(
     val route: Any,
     val routeClass: KClass<*>,
@@ -65,7 +74,8 @@ private enum class TopLevelDestination(
     @DrawableRes val icon: Int
 ) {
     Home(HomeRoute, HomeRoute::class, R.string.nav_home, R.drawable.ic_home),
-    Explore(ExploreRoute, ExploreRoute::class, R.string.nav_explore, R.drawable.ic_explore)
+    Explore(ExploreRoute, ExploreRoute::class, R.string.nav_explore, R.drawable.ic_explore),
+    Profile(ProfileRoute, ProfileRoute::class, R.string.nav_profile, R.drawable.ic_person)
 }
 
 /**
@@ -84,9 +94,11 @@ fun ExpenseShareApp(authRepository: AuthRepository) {
         SessionState.SignedOut -> AuthNavHost(authRepository)
         is SessionState.SignedIn ->
             MainNavHost(
+                authRepository = authRepository,
                 email = session.email,
                 sessionState = sessionState,
                 onRetryProfile = sessionViewModel::reloadProfile,
+                onProfileUpdated = sessionViewModel::onProfileUpdated,
                 onSignOut = sessionViewModel::signOut
             )
     }
@@ -101,6 +113,18 @@ private fun SessionStatusScreen(message: String, modifier: Modifier = Modifier) 
     ) {
         CircularProgressIndicator()
         Text(message, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+@Composable
+private fun ProfileLoadErrorScreen(error: AuthErrorReason, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(error.message(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyLarge)
+        PrimaryButton(text = stringResource(R.string.action_try_again), onClick = onRetry)
     }
 }
 
@@ -140,9 +164,11 @@ private fun AuthNavHost(authRepository: AuthRepository) {
 
 @Composable
 private fun MainNavHost(
+    authRepository: AuthRepository,
     email: String?,
     sessionState: SessionUiState,
     onRetryProfile: () -> Unit,
+    onProfileUpdated: (Profile) -> Unit,
     onSignOut: () -> Unit
 ) {
     val navController = rememberNavController()
@@ -186,6 +212,26 @@ private fun MainNavHost(
                 )
             }
             composable<ExploreRoute> { ExploreScreen() }
+            composable<ProfileRoute> {
+                val profile = sessionState.profile
+                if (profile == null) {
+                    val error = sessionState.profileError
+                    if (error == null) {
+                        SessionStatusScreen(stringResource(R.string.profile_loading))
+                    } else {
+                        ProfileLoadErrorScreen(error = error, onRetry = onRetryProfile)
+                    }
+                } else {
+                    ProfileScreen(
+                        viewModel = viewModel(
+                            key = "profile-${profile.id}",
+                            factory = viewModelFactory {
+                                initializer { ProfileViewModel(authRepository, profile, email, onProfileUpdated) }
+                            }
+                        )
+                    )
+                }
+            }
         }
     }
 }

@@ -15,6 +15,7 @@ enum class FieldError {
     MissingPassword,
     MissingName,
     InvalidUsername,
+    InvalidPhone,
     PasswordTooShort
 }
 

@@ -1,6 +1,7 @@
 package dk.sdu.expenseshare.data.remote
 
 import dk.sdu.expenseshare.domain.Profile
+import dk.sdu.expenseshare.domain.ProfileUpdate
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.exception.AuthRestException
@@ -20,7 +21,8 @@ import kotlinx.coroutines.flow.scan
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-private const val PROFILE_COLUMNS = "id, username, full_name, avatar_url, created_at, updated_at"
+private const val PROFILE_COLUMNS =
+    "id, username, full_name, avatar_url, phone, notifications_enabled, created_at, updated_at"
 
 /**
  * [AuthApi] backed by supabase-kt. The client is requested lazily through [client] so a
@@ -88,6 +90,16 @@ class SupabaseAuthApi(private val client: () -> SupabaseClient = { SupabaseProvi
             client()
                 .from("profiles")
                 .select(Columns.raw(PROFILE_COLUMNS)) {
+                    filter { eq("id", userId) }
+                }.decodeSingleOrNull<Profile>()
+        }
+
+    override suspend fun updateProfile(userId: String, update: ProfileUpdate): Profile? =
+        call(serverFailure = AuthErrorReason.ProfileSaveFailed) {
+            client()
+                .from("profiles")
+                .update(update) {
+                    select(Columns.raw(PROFILE_COLUMNS))
                     filter { eq("id", userId) }
                 }.decodeSingleOrNull<Profile>()
         }
