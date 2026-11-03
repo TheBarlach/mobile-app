@@ -151,6 +151,25 @@ Login, registration and the profile shown on the home screen use Supabase Auth t
 
 The profile row is created by the `handle_new_user` database trigger. Apply `supabase/migrations/20261102120000_fix_profiles_signup.sql` (for example with `supabase db push`) before testing registration; it stores the username, adds the `is_username_available` function and tightens the table grants.
 
+### Groups, Expenses and Balances
+
+`supabase/migrations/20261103120000_groups_expenses.sql` adds `groups`, `group_members`, `expenses`, `expense_shares`, `payments` and `reminders`. Apply it with `supabase db push` before using the Balances tab.
+
+- Only facts are stored: who paid what and how it was split. Balances are calculated in the app by the pure functions in `domain/balances/Balances.kt`.
+- Members can only read their own groups (RLS). App users cannot write to the tables directly; they call the functions `create_group`, `add_group_member`, `create_expense`, `record_payment` and `send_reminder`, which validate the input.
+- Every write has an id generated on the phone. The functions ignore an id that already exists, so a retry can never create a duplicate.
+- `supabase/sql-tests/groups_expenses_test.sql` checks the rules (access, validation, idempotent retries) against a local database. Never run it against production.
+
+In the app, `BalancesRepository` (`data/balances/`) combines three parts:
+
+| Part | Where | What it does |
+| ---- | ----- | ------------ |
+| `SupabaseBalancesApi` | `data/remote/` | Fetches groups and calls the write functions |
+| `BalancesCache` | `data/local/` | Saves the last fetched groups as JSON, so balances are shown offline |
+| `Outbox` | `data/sync/` | Saves unsent writes and sends them in the background with bounded exponential backoff; retries when connectivity returns |
+
+Data is stored per user in the app's private files folder (`files/balances/<user id>/`).
+
 ## 6. Main Project Features
 
 The application should support:
