@@ -98,8 +98,11 @@ class BalancesRepository(
         outbox.enqueue(PendingWrite.RecordPayment(newId(), groupId, toUserId, amount))
     }
 
-    /** Queues a reminder to [toUserId], unless one is being sent or was sent in this session. */
-    suspend fun sendReminder(groupId: String, toUserId: String) {
+    /**
+     * Queues a reminder to [toUserId] about [amount] øre, unless one is being sent or was sent in
+     * this session.
+     */
+    suspend fun sendReminder(groupId: String, toUserId: String, amount: Long? = null) {
         val alreadySent =
             writes.value.any {
                 it.write is PendingWrite.SendReminder &&
@@ -108,7 +111,7 @@ class BalancesRepository(
                     it.status == RequestStatus.Successful
             }
         if (alreadySent || hasUnfinishedWrite<PendingWrite.SendReminder>(groupId, toUserId)) return
-        outbox.enqueue(PendingWrite.SendReminder(newId(), groupId, toUserId))
+        outbox.enqueue(PendingWrite.SendReminder(newId(), groupId, toUserId, amount?.takeIf { it > 0 }))
     }
 
     suspend fun retryWrite(writeId: String) = outbox.retry(writeId)

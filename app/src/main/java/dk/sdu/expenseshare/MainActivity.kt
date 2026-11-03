@@ -15,9 +15,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ExpenseShareTheme {
+                val app = application as ExpenseShareApplication
                 ExpenseShareApp(
                     authRepository = authRepository,
-                    balancesRepositories = (application as ExpenseShareApplication).balancesRepositories
+                    balancesRepositories = app.balancesRepositories,
+                    notificationsRepositories = app.notificationsRepositories
                 )
             }
         }

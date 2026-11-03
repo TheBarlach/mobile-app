@@ -1,13 +1,11 @@
 <resources>
     <string name="app_name">Expense Share</string>
     <string name="nav_home">Home</string>
-    <string name="nav_explore">Explore</string>
     <string name="nav_balances">Balances</string>
+    <string name="nav_alerts">Alerts</string>
     <string name="home_title">Shared expenses, made simple</string>
     <string name="home_body">Create a group, add expenses and see who owes whom. Features are added as the project develops.</string>
     <string name="home_split_example">Example: 100.00 DKK split between 3 people</string>
-    <string name="explore_title">Explore</string>
-    <string name="explore_body">This screen is a placeholder for upcoming features such as groups, balances and notifications.</string>
 
     <!-- Session -->
     <string name="session_loading">Loading…</string>
@@ -84,6 +82,38 @@
     <string name="balances_payment_failed">The payment could not be saved.</string>
     <string name="balances_payment_synced">Your payment to %1$s has been saved.</string>
     <string name="balances_reminder_synced">Your reminder to %1$s has been sent.</string>
-    <string name="balances_profile_picture">Your profile</string>
+    <string name="profile_picture">Your profile</string>
     <string name="action_cancel">Cancel</string>
+
+    <!-- Notifications -->
+    <string name="notifications_title">Notifications</string>
+    <string name="notifications_type_expense_added">New Expense</string>
+    <string name="notifications_type_payment_reminder">Payment Reminder</string>
+    <string name="notifications_type_payment_received">Payment Received</string>
+    <string name="notifications_type_group_updated">Group Updated</string>
+    <string name="notifications_expense_added">%1$s added %2$s - %3$s</string>
+    <string name="notifications_expense_added_no_amount">%1$s added %2$s</string>
+    <string name="notifications_payment_reminder">You owe %1$s %2$s</string>
+    <string name="notifications_payment_reminder_no_amount">%1$s asked you to settle up</string>
+    <string name="notifications_payment_received">%1$s paid you %2$s</string>
+    <string name="notifications_member_joined">%1$s joined %2$s</string>
+    <string name="notifications_added_to_group">%1$s added you to %2$s</string>
+    <string name="notifications_someone">Someone</string>
+    <string name="notifications_a_group">a group</string>
+    <string name="notifications_an_expense">an expense</string>
+    <string name="notifications_unread">Unread</string>
+    <string name="notifications_mark_all_read">Mark all as read</string>
+    <string name="notifications_empty">No notifications yet. You will see new expenses, reminders and group changes here.</string>
+    <string name="notifications_loading">Loading notifications…</string>
+    <string name="notifications_load_failed">Could not load your notifications. Check your connection and try again.</string>
+    <string name="notifications_showing_saved">You are offline. Showing saved notifications.</string>
+    <string name="notifications_showing_saved_since">You are offline. Showing notifications saved %1$s.</string>
+    <string name="notifications_read_sync_waiting">Read status will be saved when you are back online…</string>
+    <string name="notifications_read_sync_failed">Could not save which notifications you have read.</string>
+    <string name="notifications_read_synced">Your read notifications have been saved.</string>
+    <string name="notifications_updated_after_reconnect">Back online. Your notifications are up to date.</string>
+    <plurals name="nav_alerts_unread">
+        <item quantity="one">%1$d unread notification</item>
+        <item quantity="other">%1$d unread notifications</item>
+    </plurals>
 </resources>

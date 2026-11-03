@@ -1,7 +1,6 @@
 package dk.sdu.expenseshare.feature.balances
 
 import android.text.format.DateUtils
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -35,11 +33,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -55,6 +50,7 @@ import dk.sdu.expenseshare.domain.balances.DebtDirection
 import dk.sdu.expenseshare.domain.balances.GroupBalance
 import dk.sdu.expenseshare.domain.balances.UserDebt
 import dk.sdu.expenseshare.ui.components.PrimaryButton
+import dk.sdu.expenseshare.ui.components.ScreenHeader
 import dk.sdu.expenseshare.ui.theme.ExpenseShareTheme
 
 /** Callbacks from the balances screen to its ViewModel. */
@@ -107,7 +103,7 @@ fun BalancesContent(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            item { BalancesHeader(userInitials) }
+            item { ScreenHeader(stringResource(R.string.balances_title), userInitials) }
 
             val summary = state.summary
             if (summary != null) {
@@ -181,36 +177,6 @@ private fun syncMessageText(message: SyncMessage): String {
         stringResource(R.string.balances_payment_synced, name)
     } else {
         stringResource(R.string.balances_reminder_synced, name)
-    }
-}
-
-@Composable
-private fun BalancesHeader(userInitials: String?, modifier: Modifier = Modifier) {
-    val avatarDescription = stringResource(R.string.balances_profile_picture)
-    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            stringResource(R.string.balances_title),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.weight(1f)
-        )
-        Box(
-            modifier =
-            Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .semantics { contentDescription = avatarDescription },
-            contentAlignment = Alignment.Center
-        ) {
-            if (userInitials != null) {
-                Text(
-                    userInitials,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
     }
 }
 

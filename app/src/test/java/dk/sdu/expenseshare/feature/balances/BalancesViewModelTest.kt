@@ -10,6 +10,7 @@ import dk.sdu.expenseshare.data.remote.BalancesApi
 import dk.sdu.expenseshare.data.remote.RemoteRequestException
 import dk.sdu.expenseshare.data.summerTripRow
 import dk.sdu.expenseshare.data.sync.Outbox
+import dk.sdu.expenseshare.data.sync.PendingWrite
 import dk.sdu.expenseshare.data.sync.RequestStatus
 import dk.sdu.expenseshare.data.sync.RetryPolicy
 import dk.sdu.expenseshare.domain.balances.DebtDirection
@@ -125,6 +126,16 @@ class BalancesViewModelTest {
         sent.complete(Unit)
         assertEquals(RequestStatus.Successful, viewModel.state.value.reminders[alexKey]?.status)
     }
+
+    @Test
+    fun `a reminder includes the amount shown, for the receiver's notification`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = viewModel()
+
+            viewModel.remind("trip", "alex")
+
+            assertEquals(listOf(PendingWrite.SendReminder(api.sent.single().id, "trip", "alex", 10_000)), api.sent)
+        }
 
     @Test
     fun `a reminder sent while offline waits, fails, and succeeds when the user retries`() =

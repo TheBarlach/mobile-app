@@ -32,11 +32,22 @@ sealed interface PendingWrite {
         }
     }
 
-    /** Asks [toUserId] to pay the signed-in user back. */
+    /**
+     * Asks [toUserId] to pay the signed-in user back. [amount] is what the user saw they are owed,
+     * shown in the receiver's notification; null for reminders queued by older app versions.
+     */
     @Serializable
     @SerialName("reminder")
-    data class SendReminder(override val id: String, override val groupId: String, override val toUserId: String) :
-        PendingWrite
+    data class SendReminder(
+        override val id: String,
+        override val groupId: String,
+        override val toUserId: String,
+        val amount: Long? = null
+    ) : PendingWrite {
+        init {
+            require(amount == null || amount > 0) { "Reminder amount must be positive, was $amount" }
+        }
+    }
 }
 
 @Serializable

@@ -99,7 +99,15 @@ class BalancesViewModel(private val repository: BalancesRepository, private val 
     }
 
     fun remind(groupId: String, memberId: String) {
-        viewModelScope.launch { repository.sendReminder(groupId, memberId) }
+        // The amount shown on the row, so the reminder can say how much is owed.
+        val amount =
+            state.value.summary
+                ?.groups
+                ?.firstOrNull { it.groupId == groupId }
+                ?.debts
+                ?.firstOrNull { it.memberId == memberId }
+                ?.amount
+        viewModelScope.launch { repository.sendReminder(groupId, memberId, amount) }
     }
 
     fun recordPayment(groupId: String, memberId: String, amount: Long) {

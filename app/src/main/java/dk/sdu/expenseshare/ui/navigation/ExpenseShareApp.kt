@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -20,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,6 +39,8 @@ import androidx.navigation.compose.rememberNavController
 import dk.sdu.expenseshare.R
 import dk.sdu.expenseshare.data.balances.BalancesRepositories
 import dk.sdu.expenseshare.data.balances.BalancesRepository
+import dk.sdu.expenseshare.data.notifications.NotificationsRepositories
+import dk.sdu.expenseshare.data.notifications.NotificationsRepository
 import dk.sdu.expenseshare.data.remote.AuthRepository
 import dk.sdu.expenseshare.data.remote.SessionState
 import dk.sdu.expenseshare.feature.auth.LoginScreen
@@ -47,8 +52,9 @@ import dk.sdu.expenseshare.feature.auth.SessionViewModel
 import dk.sdu.expenseshare.feature.balances.BalancesScreen
 import dk.sdu.expenseshare.feature.balances.BalancesViewModel
 import dk.sdu.expenseshare.feature.balances.initialsOf
-import dk.sdu.expenseshare.feature.explore.ExploreScreen
 import dk.sdu.expenseshare.feature.home.HomeScreen
+import dk.sdu.expenseshare.feature.notifications.NotificationsScreen
+import dk.sdu.expenseshare.feature.notifications.NotificationsViewModel
 import kotlin.reflect.KClass
 import kotlinx.serialization.Serializable
 
@@ -66,7 +72,7 @@ object HomeRoute
 object BalancesRoute
 
 @Serializable
-object ExploreRoute
+object NotificationsRoute
 
 private enum class TopLevelDestination(
     val route: Any,
@@ -76,7 +82,7 @@ private enum class TopLevelDestination(
 ) {
     Home(HomeRoute, HomeRoute::class, R.string.nav_home, R.drawable.ic_home),
     Balances(BalancesRoute, BalancesRoute::class, R.string.nav_balances, R.drawable.ic_balances),
-    Explore(ExploreRoute, ExploreRoute::class, R.string.nav_explore, R.drawable.ic_explore)
+    Alerts(NotificationsRoute, NotificationsRoute::class, R.string.nav_alerts, R.drawable.ic_notifications)
 }
 
 /**
@@ -84,14 +90,21 @@ private enum class TopLevelDestination(
  * (bottom navigation) while signed in, so signed-out users can never reach the app screens.
  */
 @Composable
-fun ExpenseShareApp(authRepository: AuthRepository, balancesRepositories: BalancesRepositories) {
+fun ExpenseShareApp(
+    authRepository: AuthRepository,
+    balancesRepositories: BalancesRepositories,
+    notificationsRepositories: NotificationsRepositories
+) {
     val sessionViewModel: SessionViewModel =
         viewModel(factory = viewModelFactory { initializer { SessionViewModel(authRepository) } })
     val sessionState by sessionViewModel.state.collectAsStateWithLifecycle()
 
     // Stop the previous user's background sync after sign-out; unsent writes stay saved.
     LaunchedEffect(sessionState.session) {
-        if (sessionState.session == SessionState.SignedOut) balancesRepositories.release()
+        if (sessionState.session == SessionState.SignedOut) {
+            balancesRepositories.release()
+            notificationsRepositories.release()
+        }
     }
 
     when (val session = sessionState.session) {
@@ -102,6 +115,8 @@ fun ExpenseShareApp(authRepository: AuthRepository, balancesRepositories: Balanc
             MainNavHost(
                 userId = session.userId,
                 balancesRepository = remember(session.userId) { balancesRepositories.forUser(session.userId) },
+                notificationsRepository =
+                remember(session.userId) { notificationsRepositories.forUser(session.userId) },
                 email = session.email,
                 sessionState = sessionState,
                 onRetryProfile = sessionViewModel::reloadProfile,
@@ -160,6 +175,7 @@ private fun AuthNavHost(authRepository: AuthRepository) {
 private fun MainNavHost(
     userId: String,
     balancesRepository: BalancesRepository,
+    notificationsRepository: NotificationsRepository,
     email: String?,
     sessionState: SessionUiState,
     onRetryProfile: () -> Unit,
@@ -168,6 +184,16 @@ private fun MainNavHost(
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
+    val userName = sessionState.profile?.fullName ?: sessionState.profile?.username
+
+    // Created here, not inside the Alerts destination, so the unread badge works on every tab.
+    val notificationsViewModel: NotificationsViewModel =
+        viewModel(
+            // Keyed by user so a different account never sees the previous user's notifications.
+            key = "notifications-$userId",
+            factory = viewModelFactory { initializer { NotificationsViewModel(notificationsRepository) } }
+        )
+    val notificationsState by notificationsViewModel.state.collectAsStateWithLifecycle()
 
     Scaffold(
         bottomBar = {
@@ -184,7 +210,11 @@ private fun MainNavHost(
                                 restoreState = true
                             }
                         },
-                        icon = { Icon(painterResource(destination.icon), contentDescription = null) },
+                        icon = {
+                            val unread =
+                                if (destination == TopLevelDestination.Alerts) notificationsState.unreadCount else 0
+                            NavigationIcon(destination.icon, unread)
+                        },
                         label = { Text(stringResource(destination.label)) }
                     )
                 }
@@ -206,7 +236,6 @@ private fun MainNavHost(
                 )
             }
             composable<BalancesRoute> {
-                val userName = sessionState.profile?.fullName ?: sessionState.profile?.username
                 BalancesScreen(
                     viewModel =
                     viewModel(
@@ -221,7 +250,30 @@ private fun MainNavHost(
                     userInitials = initialsOf(userName)
                 )
             }
-            composable<ExploreRoute> { ExploreScreen() }
+            composable<NotificationsRoute> {
+                NotificationsScreen(viewModel = notificationsViewModel, userInitials = initialsOf(userName))
+            }
         }
+    }
+}
+
+private const val MAX_BADGE_COUNT = 99
+
+@Composable
+private fun NavigationIcon(@DrawableRes icon: Int, unreadCount: Int, modifier: Modifier = Modifier) {
+    if (unreadCount <= 0) {
+        Icon(painterResource(icon), contentDescription = null, modifier = modifier)
+        return
+    }
+    val description = pluralStringResource(R.plurals.nav_alerts_unread, unreadCount, unreadCount)
+    BadgedBox(
+        badge = {
+            Badge {
+                Text(if (unreadCount > MAX_BADGE_COUNT) "$MAX_BADGE_COUNT+" else unreadCount.toString())
+            }
+        },
+        modifier = modifier
+    ) {
+        Icon(painterResource(icon), contentDescription = description)
     }
 }
